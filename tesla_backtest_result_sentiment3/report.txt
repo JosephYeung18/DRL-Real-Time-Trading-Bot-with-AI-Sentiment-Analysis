@@ -1,0 +1,60 @@
+======================================================================
+TSLA DRL Trading Strategy - Backtest Report
+======================================================================
+
+Report Generated: 2026-04-07 01:13:04
+Sentiment Mode: CSV Sentiment
+Trading Period: 2024-01-02 to 2024-12-27
+Initial Capital: $100,000.00
+Final Portfolio Value (DRL): $160,902.90
+
+----------------------------------------------------------------------
+PERFORMANCE METRICS COMPARISON
+----------------------------------------------------------------------
+Metric                          DRL Model           SMA (5,20)       Benchmark
+----------------------------------------------------------------------
+Total Return                       60.90%               48.05%          73.76%
+Annual Return                      61.83%               48.52%          74.53%
+Annual Volatility                  61.16%               46.54%          63.42%
+Sharpe Ratio                         1.01                 1.04            1.18
+Max Drawdown                       39.29%               31.69%          42.82%
+
+----------------------------------------------------------------------
+TRADING STATISTICS
+----------------------------------------------------------------------
+Total Buy Orders          131
+Total Sell Orders         47
+Hold Periods              72
+Average Holding Days      121.7
+Best Day Return           21.90%
+Worst Day Return          -12.30%
+
+----------------------------------------------------------------------
+FINAL ASSET COMPARISON
+----------------------------------------------------------------------
+DRL Model Final Value     $160,902.90 (+60.90%)
+SMA (5,20) Final Value    $148,054.54 (+48.05%)
+Benchmark Final Value     $173,762.18 (+73.76%)
+
+======================================================================
+CONCLUSION
+======================================================================
+Best Performing Strategy: Benchmark with 73.76% return
+The DRL model outperformed the SMA strategy but underperformed Buy & Hold.
+The DRL model had lower maximum drawdown (39.29%) compared to SMA (31.69%).
+
+======================================================================
+SENTIMENT ENHANCEMENT ANALYSIS
+======================================================================
+Sentiment Source: Pre-saved CSV
+
+The sentiment-enhanced model incorporates news sentiment data into its
+decision-making process. This can provide the following benefits:
+- Early detection of market sentiment shifts
+- Better timing for entry and exit points
+- Improved risk management during negative news events
+
+Note: The actual impact of sentiment enhancement depends on the
+quality and relevance of the sentiment data source.
+
+======================================================================

@@ -1,0 +1,46 @@
+======================================================================
+TSLA DRL Trading Strategy - Backtest Report
+======================================================================
+
+Report Generated: 2026-04-07 01:11:25
+Sentiment Mode: No Sentiment Enhancement
+Trading Period: 2024-01-02 to 2024-12-27
+Initial Capital: $100,000.00
+Final Portfolio Value (DRL): $140,129.11
+
+----------------------------------------------------------------------
+PERFORMANCE METRICS COMPARISON
+----------------------------------------------------------------------
+Metric                          DRL Model           SMA (5,20)       Benchmark
+----------------------------------------------------------------------
+Total Return                       40.13%               48.05%          73.76%
+Annual Return                      40.70%               48.52%          74.53%
+Annual Volatility                  58.03%               46.54%          63.42%
+Sharpe Ratio                         0.70                 1.04            1.18
+Max Drawdown                       37.59%               31.69%          42.82%
+
+----------------------------------------------------------------------
+TRADING STATISTICS
+----------------------------------------------------------------------
+Total Buy Orders          133
+Total Sell Orders         52
+Hold Periods              65
+Average Holding Days      117.8
+Best Day Return           21.83%
+Worst Day Return          -12.31%
+
+----------------------------------------------------------------------
+FINAL ASSET COMPARISON
+----------------------------------------------------------------------
+DRL Model Final Value     $140,129.11 (+40.13%)
+SMA (5,20) Final Value    $148,054.54 (+48.05%)
+Benchmark Final Value     $173,762.18 (+73.76%)
+
+======================================================================
+CONCLUSION
+======================================================================
+Best Performing Strategy: Benchmark with 73.76% return
+The DRL model underperformed compared to benchmark strategies.
+The DRL model had lower maximum drawdown (37.59%) compared to SMA (31.69%).
+
+======================================================================
