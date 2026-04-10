@@ -41,7 +41,7 @@ QCS/
 │   ├── live_ib_eurusd.py          # EURUSD IB实时交易
 │   ├── backtest_tsla.py           # TSLA回测
 │   ├── backtest_tsla_sentiment.py # TSLA回测(情绪增强)
-│   └── live_trading_tsla.py       # TSLA实时交易
+│   └── live_trading_tsla.py       # TSLA Alpaca实时交易
 │
 ├── data/                          # 数据文件
 │   ├── EURUSD.csv                # EURUSD历史数据
@@ -53,11 +53,11 @@ QCS/
 ├── trained_models/                # 训练好的模型
 │   ├── eurusd/                   # EURUSD模型
 │   ├── eurusd_sentiment/         # EURUSD情绪模型
-│   └── tsla/                    # TSLA模型
+│   └── tsla/                     # TSLA模型
 │
 ├── results/                       # 实验结果
-│   ├── backtest/                # 回测结果
-│   ├── live/                    # 实时交易结果
+│   ├── backtest/                 # 回测结果
+│   ├── live/                     # 实时交易结果
 │   └── comparison/               # 对比分析报告
 │
 ├── docs/                         # 文档
@@ -84,13 +84,13 @@ QCS/
 
 ## 快速开始
 
-### 安装依赖
+### 1. 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 运行EURUSD回测
+### 2. 运行EURUSD回测
 
 ```bash
 # 无情绪版本
@@ -102,7 +102,7 @@ python scripts/backtest_eurusd_sentiment.py
 
 结果保存在 `results/backtest/eurusd/`
 
-### 运行EURUSD实时交易 (Interactive Brokers)
+### 3. 运行EURUSD实时交易 (Interactive Brokers)
 
 **前提条件**:
 1. 下载安装 [Interactive Brokers TWS](https://www.interactivebrokers.com/en/trading/downloads.php) 或 IB Gateway
@@ -122,7 +122,7 @@ python scripts/live_ib_eurusd.py --sentiment --duration 30
 
 结果保存在 `results/live/eurusd/`
 
-### 运行TSLA回测
+### 4. 运行TSLA回测
 
 ```bash
 # 无情绪
@@ -131,6 +131,30 @@ python scripts/backtest_tsla.py --mode backtest
 # 有情绪 (模式3-CSV)
 python scripts/backtest_tsla_sentiment.py --mode backtest --sentiment-mode 3
 ```
+
+### 5. 运行TSLA实时交易 (Alpaca)
+
+**前提条件**:
+1. 注册 [Alpaca 账号](https://app.alpaca.markets/)
+2. 获取 API Key 和 Secret Key
+3. 设置环境变量或配置文件
+
+```bash
+# 设置API密钥
+export ALPACA_API_KEY="your_api_key"
+export ALPACA_SECRET_KEY="your_secret_key"
+
+# Paper交易模式
+python scripts/live_trading_tsla.py --mode paper --duration 60
+
+# 实时交易模式 (需要真实账户)
+python scripts/live_trading_tsla.py --mode live --duration 60
+
+# 带情绪增强
+python scripts/live_trading_tsla.py --mode paper --sentiment --duration 30
+```
+
+结果保存在 `results/live/tsla/`
 
 ---
 
@@ -158,6 +182,11 @@ python scripts/backtest_tsla_sentiment.py --mode backtest --sentiment-mode 3
 - A2C/PPO强化学习算法
 - 三种情绪增强模式
 - 完整的风险管理系统
+
+**Alpaca API 实时交易**:
+- 支持TSLA股票实时交易
+- Paper/Live双模式
+- 实时订单执行和持仓管理
 
 ### 3. 情绪分析
 
@@ -191,6 +220,13 @@ python scripts/backtest_tsla_sentiment.py --mode backtest --sentiment-mode 3
 | SMA(5,20) | +1.23% | 3.02% | 0.18 |
 | DRL+情绪 | -2.11% | 3.09% | -0.78 |
 | Buy&Hold | -5.36% | 7.50% | -0.80 |
+
+### EURUSD IB 实时交易 (10分钟)
+
+| 策略 | 总收益率 | 夏普比率 | 交易次数 |
+|------|----------|----------|----------|
+| DRL (无情绪) | -0.00% | 30.70 | 1 |
+| DRL (带情绪) | -0.00% | 23.36 | 1 |
 
 ### TSLA 2024回测
 
@@ -227,6 +263,18 @@ python scripts/backtest_tsla_sentiment.py --mode backtest --sentiment-mode 3
 | `sentiment.py` | 情绪分析处理 |
 | `config.py` | TSLA系统配置 |
 | `config_eurusd.py` | EURUSD配置 |
+| `model_loader.py` | 模型加载 |
+
+### 可执行脚本 (`scripts/`)
+
+| 脚本 | 说明 |
+|------|------|
+| `backtest_eurusd.py` | EURUSD回测 (无情绪) |
+| `backtest_eurusd_sentiment.py` | EURUSD回测 (带情绪) |
+| `live_ib_eurusd.py` | EURUSD IB实时交易 |
+| `backtest_tsla.py` | TSLA回测 (无情绪) |
+| `backtest_tsla_sentiment.py` | TSLA回测 (带情绪) |
+| `live_trading_tsla.py` | TSLA Alpaca实时交易 |
 
 ---
 
@@ -241,15 +289,36 @@ python scripts/backtest_tsla_sentiment.py --mode backtest --sentiment-mode 3
 | 状态空间 | 15 | 16 |
 | 杠杆 | 2x | 1x |
 | 做空 | 支持 | 不支持 |
+| 交易API | Interactive Brokers | Alpaca |
+
+---
+
+## API配置
+
+### Interactive Brokers (EURUSD)
+```bash
+# IB Gateway/TWS设置
+# 1. File > Global Configuration > API > Settings
+# 2. Enable Socket Clients
+# 3. Port: 7496 (Paper) / 7497 (Live)
+```
+
+### Alpaca (TSLA)
+```bash
+# 注册: https://app.alpaca.markets/
+# 获取API密钥后设置环境变量
+export ALPACA_API_KEY="your_api_key"
+export ALPACA_SECRET_KEY="your_secret_key"
+```
 
 ---
 
 ## 注意事项
 
 1. EURUSD回测使用自定义环境，需使用 `scripts/backtest_eurusd.py`
-2. EURUSD实时交易使用 `scripts/live_ib_eurusd.py` (需IB)
+2. EURUSD实时交易使用 `scripts/live_ib_eurusd.py` (需IB TWS/Gateway)
 3. TSLA回测使用 `scripts/backtest_tsla.py` 或 `scripts/backtest_tsla_sentiment.py`
-4. 实时交易需要设置相应API密钥
+4. TSLA实时交易使用 `scripts/live_trading_tsla.py` (需Alpaca API密钥)
 5. 过去表现不代表未来收益
 
 ---
@@ -261,9 +330,9 @@ python scripts/backtest_tsla_sentiment.py --mode backtest --sentiment-mode 3
 ```bibtex
 @software{QCS2024,
   title = {QCS - Quantitative Commodity Trading System},
-  author = {Your Name},
+  author = {Joseph Yeung},
   year = {2024},
-  url = {https://github.com/your-repo/qcs}
+  url = {https://github.com/JosephYeung18/DRL-Real-Time-Trading-Bot-with-AI-Sentiment-Analysis}
 }
 ```
 
