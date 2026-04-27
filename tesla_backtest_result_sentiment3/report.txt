@@ -2,37 +2,37 @@
 TSLA DRL Trading Strategy - Backtest Report
 ======================================================================
 
-Report Generated: 2026-04-07 01:13:04
+Report Generated: 2026-04-18 13:11:38
 Sentiment Mode: CSV Sentiment
 Trading Period: 2024-01-02 to 2024-12-27
 Initial Capital: $100,000.00
-Final Portfolio Value (DRL): $160,902.90
+Final Portfolio Value (DRL): $170,422.30
 
 ----------------------------------------------------------------------
 PERFORMANCE METRICS COMPARISON
 ----------------------------------------------------------------------
 Metric                          DRL Model           SMA (5,20)       Benchmark
 ----------------------------------------------------------------------
-Total Return                       60.90%               48.05%          73.76%
-Annual Return                      61.83%               48.52%          74.53%
-Annual Volatility                  61.16%               46.54%          63.42%
-Sharpe Ratio                         1.01                 1.04            1.18
-Max Drawdown                       39.29%               31.69%          42.82%
+Total Return                       70.42%               48.05%          73.76%
+Annual Return                      71.52%               48.52%          74.53%
+Annual Volatility                  60.60%               46.54%          63.42%
+Sharpe Ratio                         1.18                 1.04            1.18
+Max Drawdown                       35.93%               31.69%          42.82%
 
 ----------------------------------------------------------------------
 TRADING STATISTICS
 ----------------------------------------------------------------------
-Total Buy Orders          131
-Total Sell Orders         47
-Hold Periods              72
-Average Holding Days      121.7
-Best Day Return           21.90%
-Worst Day Return          -12.30%
+Total Buy Orders          121
+Total Sell Orders         37
+Hold Periods              92
+Average Holding Days      127.3
+Best Day Return           19.09%
+Worst Day Return          -12.33%
 
 ----------------------------------------------------------------------
 FINAL ASSET COMPARISON
 ----------------------------------------------------------------------
-DRL Model Final Value     $160,902.90 (+60.90%)
+DRL Model Final Value     $170,422.30 (+70.42%)
 SMA (5,20) Final Value    $148,054.54 (+48.05%)
 Benchmark Final Value     $173,762.18 (+73.76%)
 
@@ -41,7 +41,7 @@ CONCLUSION
 ======================================================================
 Best Performing Strategy: Benchmark with 73.76% return
 The DRL model outperformed the SMA strategy but underperformed Buy & Hold.
-The DRL model had lower maximum drawdown (39.29%) compared to SMA (31.69%).
+The DRL model had lower maximum drawdown (35.93%) compared to SMA (31.69%).
 
 ======================================================================
 SENTIMENT ENHANCEMENT ANALYSIS
