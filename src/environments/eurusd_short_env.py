@@ -146,19 +146,23 @@ class EURUSDShortSellingEnv(gym.Env):
         cost = trade_value * self.short_cost_pct
         received = abs(trade_value) - cost
 
+        # Save old shares before modifying
+        old_shares = self.shares
+
         # Update cash
         self.cash += received
 
         # Track short position (shares become negative)
         self.shares -= num_shares
 
-        # Update entry price (weighted average)
-        if abs(self.shares + num_shares) > 0:
-            # Adding to short
-            old_position_value = -(self.shares + num_shares) * self.entry_price
-            new_position_value = trade_value
+        # Update entry price (weighted average of short positions)
+        if old_shares < 0 or (old_shares == 0 and num_shares > 0):
+            # Old position value = abs(old_shares) * old_entry_price
+            # New position value = num_shares * price
+            old_position_value = abs(old_shares) * self.entry_price if old_shares < 0 else 0
+            new_position_value = num_shares * price
             total_position_value = old_position_value + new_position_value
-            self.entry_price = total_position_value / abs(self.shares) if self.shares != 0 else 0
+            self.entry_price = total_position_value / abs(self.shares) if self.shares != 0 else price
 
         self.trades += 1
         self.cost += cost
@@ -276,8 +280,9 @@ class EURUSDShortSellingEnv(gym.Env):
             self.asset_memory.append(end_total_asset)
             self.date_memory.append(self._get_date())
 
-            total_return = (end_total_asset - self.initial_amount) / self.initial_amount
-            self.reward = total_return * 100 * self.reward_scaling
+            # Terminal reward based on total return percentage
+            total_return_pct = (end_total_asset - current_total_asset) / current_total_asset
+            self.reward = total_return_pct
             return self.state, self.reward, self.terminal, False, {}
 
         # Execute trade based on action
@@ -303,14 +308,14 @@ class EURUSDShortSellingEnv(gym.Env):
             target_shares = int(target_position_value / current_price) if current_price > 0 else 0
 
             # For short, shares are negative
-            target_short_shares = target_shares
+            target_short_shares = -target_shares  # NEGATIVE for short position
             shares_to_trade = target_short_shares - current_shares  # current_shares may be negative
 
             if shares_to_trade < 0:
-                # Need to short more (open/add to short)
+                # Need to short more (open/add to short) - shares become more negative
                 self._open_short(abs(shares_to_trade), current_price)
             elif shares_to_trade > 0:
-                # Need to cover (buy back to reduce short)
+                # Need to cover (buy back to reduce short) - shares move toward zero
                 self._close_short(shares_to_trade, current_price)
 
         # Apply borrowing costs for shorts
@@ -330,13 +335,48 @@ class EURUSDShortSellingEnv(gym.Env):
         end_total_asset = self.cash + new_shares * new_price
         self.total_asset = end_total_asset
 
-        # Calculate reward (symmetric for long and short)
-        price_change = new_price - current_price
-        position_pnl = new_shares * price_change  # Works for both long and short
+        # Calculate reward based on price direction and position alignment
+        # Get price change from previous step
+        price_change_pct = (new_price - current_price) / current_price if current_price > 0 else 0
+        portfolio_change_pct = (end_total_asset - current_total_asset) / current_total_asset if current_total_asset > 0 else 0
 
-        # Transaction costs already deducted from cash
-        gross_reward = position_pnl - self.cost  # Approximate
-        self.reward = gross_reward * self.reward_scaling
+        # Base reward is portfolio change percentage
+        reward = portfolio_change_pct
+
+        # Directional alignment reward: reward when position matches price direction
+        position_direction = np.sign(action)
+        price_direction = np.sign(price_change_pct)
+        directional_alignment = position_direction * price_direction
+        if directional_alignment > 0:
+            reward += abs(price_change_pct) * 0.1  # Reward for correct direction
+        elif directional_alignment < 0:
+            reward -= abs(price_change_pct) * 0.1  # Penalty for wrong direction
+
+        # Symmetric P&L reward for position
+        position_pnl = new_shares * (new_price - current_price)
+        reward += position_pnl * 1e-5  # Scale down
+
+        # Position size reward - encourage using more of the action space
+        # Large position = more reward (since we're trading with leverage)
+        if abs(self.shares) > 100:
+            position_size_bonus = abs(self.shares) / 100000 * 0.0001
+            reward += position_size_bonus
+
+        # Leverage penalty to prevent excessive positions
+        position_ratio = abs(self.shares * current_price) / current_total_asset if current_total_asset > 0 else 0
+        if position_ratio > 2.0:  # Very high leverage
+            reward -= 0.0002
+        elif position_ratio > 1.5:
+            reward -= 0.0001
+
+        # Action diversity bonus - reward for using varied actions
+        if len(self.actions_memory) >= 5:
+            recent_actions = np.array(self.actions_memory[-5:])
+            action_std = np.std(recent_actions)
+            if action_std > 0.1:  # Good diversity
+                reward += 0.00005
+
+        self.reward = reward
 
         # Memory
         self.asset_memory.append(end_total_asset)
@@ -379,5 +419,9 @@ class EURUSDShortSellingEnv(gym.Env):
         from stable_baselines3.common.vec_env import DummyVecEnv
 
         e = DummyVecEnv([lambda: self])
-        obs = e.reset()
+        result = e.reset()
+        if isinstance(result, tuple):
+            obs, _ = result
+        else:
+            obs = result
         return e, obs

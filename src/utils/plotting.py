@@ -60,13 +60,21 @@ def plot_full_evaluation(dates, model_equity, sma_equity, bench_equity, prices,
     else:
         rolling_sharpe = np.zeros(n)
 
-    # Action analysis
-    model_actions_arr = np.array(model_actions[:n]).flatten()
-    buy_idx = np.where(model_actions_arr > 0)[0]
-    sell_idx = np.where(model_actions_arr < 0)[0]
+    # Action analysis - detect buy/sell based on position ratio changes
+    smoothed = np.array(smoothed_signals[:n]).flatten()
+    position_changes = np.diff(smoothed)  # Change in position ratio
+
+    # Buy signal: position increases by more than 5%
+    buy_idx = np.where(position_changes > 0.05)[0]
+    # Sell signal: position decreases by more than 5%
+    sell_idx = np.where(position_changes < -0.05)[0]
+    # Hold: position stays roughly the same
     buy_count = len(buy_idx)
     sell_count = len(sell_idx)
-    hold_count = len(model_actions_arr) - buy_count - sell_count
+    hold_count = n - buy_count - sell_count
+
+    # For action distribution, use actual position values
+    model_actions_arr = smoothed
 
     # Create figure
     fig, axes = plt.subplots(4, 2, figsize=(18, 20))
@@ -102,11 +110,13 @@ def plot_full_evaluation(dates, model_equity, sma_equity, bench_equity, prices,
     # Plot 3: Price with Buy/Sell Signals
     ax3 = axes[1, 0]
     ax3.plot(dates, prices, label='TSLA Price', color='black', linewidth=1.2, alpha=0.8)
+    # buy_idx/sell_idx are indices into position_changes (length n-1)
+    # Add 1 to align with dates/prices (length n)
     if len(buy_idx) > 0:
-        ax3.scatter(dates[buy_idx], prices[buy_idx], color='green', marker='^',
+        ax3.scatter(dates[buy_idx + 1], prices[buy_idx + 1], color='green', marker='^',
                    s=60, alpha=0.8, label=f'Buy ({buy_count})', zorder=5, edgecolors='darkgreen')
     if len(sell_idx) > 0:
-        ax3.scatter(dates[sell_idx], prices[sell_idx], color='red', marker='v',
+        ax3.scatter(dates[sell_idx + 1], prices[sell_idx + 1], color='red', marker='v',
                    s=60, alpha=0.8, label=f'Sell ({sell_count})', zorder=5, edgecolors='darkred')
     ax3.set_title('DRL Trading Signals on Price', fontsize=13, fontweight='bold')
     ax3.set_ylabel('Price ($)', fontsize=11)
@@ -117,7 +127,6 @@ def plot_full_evaluation(dates, model_equity, sma_equity, bench_equity, prices,
 
     # Plot 4: Position Ratio Over Time
     ax4 = axes[1, 1]
-    smoothed = np.array(smoothed_signals[:n]).flatten()
     ax4.fill_between(dates, 0, smoothed * 100, alpha=0.3, color='blue', label='Position (%)')
     ax4.plot(dates, smoothed * 100, color='blue', linewidth=1.5)
     ax4.axhline(y=50, color='gray', linestyle='--', linewidth=1, alpha=0.7)

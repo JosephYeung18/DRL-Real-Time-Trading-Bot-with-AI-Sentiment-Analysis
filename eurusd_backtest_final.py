@@ -21,8 +21,18 @@ from datetime import datetime
 import os
 import sys
 import talib
+import random
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Set seeds for reproducibility BEFORE any other imports
+SEED = 42
+np.random.seed(SEED)
+random.seed(SEED)
+import torch
+torch.manual_seed(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 from finrl.meta.preprocessor.preprocessors import FeatureEngineer, data_split
 from finrl.agents.stablebaselines3.models import DRLAgent
@@ -134,7 +144,8 @@ def create_env(data, with_sentiment=False):
         indicators = indicators + ['sentiment_score']
     indicators = indicators + ['atr', 'adx', 'willr', 'cci']
 
-    state_space = 1 + 2 * stock_dimension + len(indicators) * stock_dimension
+    # State = [cash, price, shares, indicators...] = 1 + 1 + 1 + len(indicators)
+    state_space = 3 + len(indicators)
 
     env_kwargs = {
         "df": data,
@@ -157,7 +168,7 @@ def create_env(data, with_sentiment=False):
 
 
 def train_with_early_stopping(train_data, val_data, with_sentiment=False, patience=15):
-    """Train A2C - validation set is too small for reliable early stopping"""
+    """Train A2C with proper seed handling"""
     print(f"\n2. Training A2C...")
 
     env_trade = create_env(train_data, with_sentiment)
@@ -167,15 +178,16 @@ def train_with_early_stopping(train_data, val_data, with_sentiment=False, patien
 
     model_params = {
         "n_steps": 4096,
-        "ent_coef": 0.05,  # Lower entropy for more decisive actions
-        "learning_rate": 0.0003,
+        "ent_coef": 0.05,  # Much higher for more exploration
+        "learning_rate": 0.00007,
         "vf_coef": 0.5,
         "max_grad_norm": 0.5,
         "gamma": 0.99,
         "gae_lambda": 0.95,
+        "device": "cpu",
     }
 
-    model = agent.get_model("a2c", model_kwargs=model_params)
+    model = agent.get_model("a2c", model_kwargs=model_params, seed=SEED)
 
     print("   Training 300,000 steps...")
     model = agent.train_model(model=model, tb_log_name="a2c_final", total_timesteps=300000)
@@ -247,14 +259,23 @@ def backtest_with_short_selling(trade_data, model, with_sentiment=False):
 
         new_shares = env_trade.shares
 
-        # Log trades
+        # Log trades based on actual position change and direction
         if new_shares != current_shares:
-            if new_shares > current_shares:
-                trade_type = 'BUY/LONG'
-                shares_changed = new_shares - current_shares
-            else:
+            shares_changed = new_shares - current_shares
+
+            if current_shares < 0 and shares_changed > 0:
+                # Covering short (moving from negative toward zero)
                 trade_type = 'SELL/SHORT'
-                shares_changed = current_shares - new_shares
+            elif current_shares >= 0 and shares_changed > 0:
+                # Buying/going long
+                trade_type = 'BUY/LONG'
+            elif current_shares > 0 and shares_changed < 0:
+                # Selling/reducing long
+                trade_type = 'SELL/LONG'
+            else:
+                # Opening/adding to short (current_shares <= 0 and shares_changed < 0)
+                trade_type = 'SELL/SHORT'
+
             trade_log.append({
                 'date': env_trade._get_date(),
                 'type': trade_type,
@@ -755,6 +776,11 @@ if __name__ == "__main__":
     })
     results_df.to_csv(f"{OUTPUT_DIR}/backtest_results.csv", index=False)
 
+    # Save trade log
+    if len(results['trade_log']) > 0:
+        trade_df = pd.DataFrame(results['trade_log'])
+        trade_df.to_csv(f"{OUTPUT_DIR}/trade_log_detailed.csv", index=False)
+
     print("\n" + "=" * 60)
     print("COMPLETE - Return:", f"{calculate_metrics(model_ret, 'DRL')['Total Return']:+.2f}%")
     print("=" * 60)
@@ -785,6 +811,11 @@ if __name__ == "__main__":
         'holdings': results['holdings']
     })
     results_df.to_csv(f"{OUTPUT_DIR_SENTIMENT}/backtest_results.csv", index=False)
+
+    # Save trade log
+    if len(results['trade_log']) > 0:
+        trade_df = pd.DataFrame(results['trade_log'])
+        trade_df.to_csv(f"{OUTPUT_DIR_SENTIMENT}/trade_log_detailed.csv", index=False)
 
     print("\n" + "=" * 60)
     print("COMPLETE - Return:", f"{calculate_metrics(model_ret, 'DRL')['Total Return']:+.2f}%")
